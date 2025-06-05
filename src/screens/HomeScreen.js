@@ -1,14 +1,16 @@
-import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native'
-import React, { useCallback, useState } from 'react'
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Button, Alert } from 'react-native'
+import React, { useCallback, useContext, useState } from 'react'
 import { useFocusEffect } from '@react-navigation/native'
-import { getCursos } from '../services/CursoService'
+import { deletarCurso, getCursos } from '../services/CursoService'
+import { AuthContext } from '../context/AuthContext'
 
 const HomeScreen = ({ navigation }) => {
 
   const [items, setItems] = useState([])
+  const { user } = useContext(AuthContext)
 
   const carregarCursos =  async () => {
-    const cursos = await getCursos()
+    const cursos = await getCursos(user.uid)
     setItems(cursos)
   }
 
@@ -18,9 +20,24 @@ const HomeScreen = ({ navigation }) => {
     }, [])
   )
 
+  const confirmarExclusao = (id) => {
+    Alert.alert('Confirmar', 'Deseja realmente excluir este curso?', [
+      { text: 'Cancelar', style: 'cancel'},
+      { 
+        text:  'Excluir',
+        style: 'destructive',
+        onPress: async () => {
+          await deletarCurso(id)
+          carregarCursos()
+        }
+       }
+    ])
+  }
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>📚 Cursos Disponíveis</Text>
+      <Button title='Adicionar Curso' onPress={() => navigation.navigate('CursoForm')} />
       <FlatList
         data={items}
         keyExtractor={(item) => item.id}
@@ -35,6 +52,7 @@ const HomeScreen = ({ navigation }) => {
             >
                 <Text style={styles.itemTitle}>{item.name}</Text>
                 <Text style={styles.itemDescription}>{item.description}</Text>
+                <Button title="🗑️" onPress={() => confirmarExclusao(item.id)} color="#d9534f"  />
             </TouchableOpacity>
         )
 
